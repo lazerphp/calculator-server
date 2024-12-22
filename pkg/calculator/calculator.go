@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// валидация с пробелами
 func checkSpaceInNums(str string) error {
 	var prevDigitPos int
 	var prevNoDigitPos int
@@ -26,8 +27,10 @@ func checkSpaceInNums(str string) error {
 	return nil
 }
 
+// более полная валидация
 func checkInput(str string) error {
 
+	// валидация на смысл
 	if len(str) == 0 {
 		return InvalidInput.With("пустой ввод")
 	}
@@ -39,6 +42,7 @@ func checkInput(str string) error {
 		return InvalidInput.With("в выражении нет цифр")
 	}
 
+	// валидация скобок
 	cntBrackets := 0
 	for i, x := range str {
 		if x == ')' {
@@ -58,7 +62,10 @@ func checkInput(str string) error {
 		return InvalidBrackets.With("не хватает закрывающих скобок")
 	}
 
+	// остальные случаи валидации
 	for i, x := range str {
+
+		// обработка знаков, кроме -
 		if strings.Contains("+*/", string(x)) {
 			if i == 0 {
 				return InvalidOperators.With("'%c' в начале выражения", x)
@@ -77,6 +84,7 @@ func checkInput(str string) error {
 			}
 		}
 
+		// обработка знака -
 		if x == '-' {
 			if i == len(str)-1 {
 				return InvalidOperators.With("минус в конце выражения")
@@ -87,11 +95,16 @@ func checkInput(str string) error {
 			if i > 0 && str[i-1] == '+' {
 				return InvalidOperators.With("недопустимый '+-'")
 			}
-			if i > 1 && str[i-1] == '-' && strings.Contains("*/", string(str[i-2])) {
-				return InvalidOperators.With("знак и два минуса подряд")
+			if i > 0 && str[i-1] == '-' {
+				return InvalidOperators.With("недопустимый '--'")
 			}
+			// это уже не нужно
+			// if i > 1 && str[i-1] == '-' && strings.Contains("*/", string(str[i-2])) {
+			// 	return InvalidOperators.With("знак и два минуса подряд")
+			// }
 		}
 
+		// обработка точки
 		if x == '.' {
 			if i == 0 {
 				return InvalidOperators.With("точка в начале")
@@ -108,6 +121,7 @@ func checkInput(str string) error {
 	return nil
 }
 
+// подготовка массива
 func prepareExp(str string) []interface{} {
 	var res []interface{}
 	var buf []rune
@@ -137,6 +151,7 @@ func prepareExp(str string) []interface{} {
 	return res
 }
 
+// поиск скобочного выражения
 func findBrackets(arr []interface{}) (int, int, bool) {
 	openPos := -1
 	closePos := -1
@@ -161,10 +176,12 @@ func findBrackets(arr []interface{}) (int, int, bool) {
 	return 0, 0, false
 }
 
+// функция удаления из середины
 func remove(slice []interface{}, i int) []interface{} {
 	return append(slice[:i], slice[i+1:]...)
 }
 
+// выполнение операторов согласно приоритету
 func execOps(arr []interface{}) (float64, error) {
 
 	i := 0
@@ -218,6 +235,7 @@ func execOps(arr []interface{}) (float64, error) {
 	return arr[0].(float64), nil
 }
 
+// рекурсивный (из-за скобочных выражений) подсчет
 func recCalc(arr []interface{}) (float64, error) {
 	for range arr {
 		openBracket, closeBracket, hasBrackets := findBrackets(arr)
@@ -243,6 +261,7 @@ func recCalc(arr []interface{}) (float64, error) {
 	return calculated, nil
 }
 
+// кальк
 func Calc(input string) (float64, error) {
 	spaceErr := checkSpaceInNums(input)
 	if spaceErr != nil {
@@ -256,7 +275,7 @@ func Calc(input string) (float64, error) {
 	}
 
 	preparedExp := prepareExp(preparedStr)
-
+	// fmt.Println(preparedExp)
 	res, calcErr := recCalc(preparedExp)
 	if calcErr != nil {
 		return 0, calcErr
